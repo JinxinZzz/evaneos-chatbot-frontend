@@ -1,11 +1,12 @@
 "use client";
-import { useState, ChangeEvent, KeyboardEvent } from "react";
+import React, { useState, ChangeEvent, KeyboardEvent } from "react";
 
 interface InputBoxProps {
   onSend: (message: string) => void; // Callback to send message
+  maxLength?: number;
 }
 
-export default function InputBox({ onSend }: InputBoxProps) {
+export default function InputBox({ onSend, maxLength = 500 }: InputBoxProps): React.ReactElement {
   const [input, setInput] = useState("");
 
   // Handle textarea height adjustment
@@ -16,13 +17,14 @@ export default function InputBox({ onSend }: InputBoxProps) {
 
   // Handle input change & auto-resize
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    if (e.target.value.length > maxLength) return; // enforce max length
     setInput(e.target.value);
     adjustHeight(e.target);
   };
 
-  // Handle Enter key to send message
+  // Handle Enter key: Shift+Enter => newline, Enter => send
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -30,8 +32,9 @@ export default function InputBox({ onSend }: InputBoxProps) {
 
   // Trigger send action
   const sendMessage = () => {
-    if (input.trim()) {
-      onSend(input);
+    const trimmed = input.replace(/\s+/g, ' ').trim();
+    if (trimmed) {
+      onSend(trimmed);
       setInput("");
     }
   };

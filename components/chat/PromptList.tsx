@@ -1,37 +1,48 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import api from '../../src/utils/api';
 
 // Props: Receive send callback from ChatContainer
 interface PromptListProps {
   onSendPrompt: (prompt: string) => void; // Callback to send prompt directly
 }
 
-// Common prompts (extend as needed)
-const COMMON_PROMPTS = [
-  "Show me sales data for Q3",
-  "List upcoming marketing campaigns",
-  "Help me create a customer report",
-  "Display 2025 quarterly sales chart"
-];
+export default function PromptList({ onSendPrompt }: PromptListProps): React.ReactElement {
+  const [prompts, setPrompts] = useState<{ id: string; text: string; description?: string }[]>([]);
+  const [loading, setLoading] = useState(false);
 
-export default function PromptList({ onSendPrompt }: PromptListProps) {
-  // Handle prompt click: Send directly without hover
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await api.getPrompts();
+        if (mounted) setPrompts(res.prompts);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handlePromptClick = (prompt: string) => {
-    if (prompt.trim()) {
-      onSendPrompt(prompt); // Trigger send logic in parent
-    }
+    if (prompt.trim()) onSendPrompt(prompt);
   };
+
+  if (loading) return <div className="mb-3 text-sm text-gray-500">Loading prompts...</div>;
 
   return (
     <div className="mb-3 flex flex-wrap gap-2">
-      {COMMON_PROMPTS.map((prompt, index) => (
+      {prompts.map((p) => (
         <button
-          key={index}
-          onClick={() => handlePromptClick(prompt)}
+          key={p.id}
+          onClick={() => handlePromptClick(p.text)}
           className="px-4 py-2 bg-evaneos-panel text-evaneos-dark text-sm rounded-full hover:bg-evaneos-dark hover:text-white transition-colors shadow-sm"
-          aria-label={`Send prompt: ${prompt}`}
+          aria-label={`Send prompt: ${p.text}`}
         >
-          {prompt}
+          {p.text}
         </button>
       ))}
     </div>
